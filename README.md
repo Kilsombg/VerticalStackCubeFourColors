@@ -9,9 +9,11 @@ Output:
 printed each combination that correspond to the objective. Between the combinations is one empty line. Each combination is printed with one cube on a single line.
 
 example:
+
 Input: RBGYBY,RGGYBB,YBRGYR,YGBRRR
 
 Output:
+
 YBBRGY
 GYRGBB
 RGYBRY
