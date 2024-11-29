@@ -3,6 +3,8 @@
 #include<map>
 #include<vector>
 
+// input: RBGYBY,RGGYBB,YBRGYR,YGBRRR
+
 enum CubeIndex {
     FRONT = 0,
     BACK = 1,
@@ -15,7 +17,25 @@ enum CubeIndex {
 std::map<int,std::vector<std::string>> g_cubesStates;
 std::vector<std::vector<std::string>> g_solutions;
 
+
 const int CUBECOUNT = 4;
+std::string g_initialState[CUBECOUNT];
+
+void setInitialState(std::string* cubesState)
+{
+    for (int i = 0; i < CUBECOUNT; i++)
+    {
+        g_initialState[i] = cubesState[i];
+    }
+}
+
+void setInitialStateToCube(std::string** cubesState)
+{
+    for (int i = 0; i < CUBECOUNT; i++)
+    {
+         (*cubesState)[i] = g_initialState[i];
+    }
+}
 
 bool contain4Colors(std::string s)
 {
@@ -81,11 +101,32 @@ void rotateVerticalFrontBackCube(std::string* cube)
 
 }
 
-void rotateVerticalLeftRightmCube(std::string* cube)
+void rotateVerticalBackFrontCube(std::string* cube)
 {
-    // front back left right top bottom  left -> bottom   => left -> bottom
+    // front back left right top bottom  back -> bottom   => back -> bottom
+    // front bottom left right top back  bottom -> front  => back -> front
+    // bottom front left right top back  front -> top     => back -> top
+    // bottom top left right front back
+    //
+
+
+    if (cube->length() < 5)
+        return;
+
+    // top -> front
+    std::swap((*cube)[BACK], (*cube)[BOTTOM]);
+    // front -> bottom
+    std::swap((*cube)[BACK], (*cube)[FRONT]);
+    // bottom -> back
+    std::swap((*cube)[BACK], (*cube)[TOP]);
+
+}
+
+void rotateVerticalLeftRightCube(std::string* cube)
+{
+    // front back left right top bottom  left -> bottom     => left -> bottom
     // front back bottom right top left  bottom -> right    => left -> right
-    // front back right bottom top left  right-> top       => left -> top
+    // front back right bottom top left  right-> top        => left -> top
     // front back top bottom right left
     //
 
@@ -100,6 +141,52 @@ void rotateVerticalLeftRightmCube(std::string* cube)
     // bottom -> back
     std::swap((*cube)[LEFT], (*cube)[TOP]);
 
+}
+
+void rotateVerticalRightLeftCube(std::string* cube)
+{
+    // front back left right top bottom  left -> top         => left -> top
+    // front back top right left bottom  top -> right        => left -> right
+    // front back right top left bottom  right-> bottom      => left -> bottom
+    // front back bottom top left right
+    //
+
+
+    if (cube->length() < 5)
+        return;
+
+    // top -> front
+    std::swap((*cube)[LEFT], (*cube)[TOP]);
+    // front -> bottom
+    std::swap((*cube)[LEFT], (*cube)[RIGHT]);
+    // bottom -> back
+    std::swap((*cube)[LEFT], (*cube)[BOTTOM]);
+
+}
+
+void rotateVerticallyBackFrontFullCycleCube(std::string* verticalStack, int cubeIndex)
+{
+    for (int i = 0; i < 4; i++)
+    {
+        if (std::count(g_cubesStates[cubeIndex].begin(), g_cubesStates[cubeIndex].end(), verticalStack[cubeIndex]) <= 0)
+        {
+            g_cubesStates[cubeIndex].push_back(verticalStack[cubeIndex]);
+        }
+        rotateVerticalBackFrontCube(&verticalStack[cubeIndex]);
+    }
+}
+
+void rotateLeftRightFullCycleCube(std::string* verticalStack, int cubeIndex)
+{
+    for (int i = 0; i < 4; i++)
+    {
+        if (std::count(g_cubesStates[cubeIndex].begin(), g_cubesStates[cubeIndex].end(), verticalStack[cubeIndex]) <= 0)
+        {
+            g_cubesStates[cubeIndex].push_back(verticalStack[cubeIndex]);
+        }
+        rotateLeftRightCube(&verticalStack[cubeIndex]);
+        rotateVerticallyBackFrontFullCycleCube(verticalStack, cubeIndex);
+    }
 }
 
 bool checkVerticalStackColorsSide(std::string* verticalStack, CubeIndex side)
@@ -170,28 +257,44 @@ void generateEveryCombination(std::string* verticalStack)
 {
     for (int cubeIndex = 0; cubeIndex < CUBECOUNT; cubeIndex++)
     {
-        int i = 0, j = 0, k=0;
-        for (i = 0; i < 4; i++)
+        // horizontal state 1:
+        // front right back left
+        rotateLeftRightFullCycleCube(verticalStack, cubeIndex);
+        
+        // horizontal state 2:
+        // front bottom back top
+        setInitialStateToCube(&verticalStack);
+        rotateVerticalLeftRightCube(&verticalStack[cubeIndex]);
+        rotateLeftRightFullCycleCube(verticalStack, cubeIndex);
+       
+        // horizontal state 3:
+        // front top back bottom
+        setInitialStateToCube(&verticalStack);
+        rotateVerticalRightLeftCube(&verticalStack[cubeIndex]);
+        rotateLeftRightFullCycleCube(verticalStack, cubeIndex);
+
+        // horizontal state 4:
+        // top right bottom left
+        setInitialStateToCube(&verticalStack);
+        rotateVerticalFrontBackCube(&verticalStack[cubeIndex]);
+        rotateLeftRightFullCycleCube(verticalStack, cubeIndex);
+
+        // horizontal state 5:
+        // bottom right top left
+        setInitialStateToCube(&verticalStack);
+        rotateVerticalBackFrontCube(&verticalStack[cubeIndex]);
+        rotateLeftRightFullCycleCube(verticalStack, cubeIndex);
+    }
+}
+
+void printSolution()
+{
+    for (int i = 0; i < g_solutions.size(); i++)
+    {
+        std::cout << std::endl;
+        for(auto cubeState : g_solutions[i])
         {
-            if (std::count(g_cubesStates[cubeIndex].begin(), g_cubesStates[cubeIndex].end(), verticalStack[cubeIndex]) <= 0)
-            {
-                g_cubesStates[cubeIndex].push_back(verticalStack[cubeIndex]);
-            }
-            rotateLeftRightCube(&verticalStack[cubeIndex]);
-        }
-        for (j = 0; j < 4; j++) {
-            if (std::count(g_cubesStates[cubeIndex].begin(), g_cubesStates[cubeIndex].end(), verticalStack[cubeIndex]) <= 0)
-            {
-                g_cubesStates[cubeIndex].push_back(verticalStack[cubeIndex]);
-            }
-            rotateVerticalFrontBackCube(&verticalStack[cubeIndex]);
-        }
-        for (k = 0; k < 4; k++) {
-            if (std::count(g_cubesStates[cubeIndex].begin(), g_cubesStates[cubeIndex].end(), verticalStack[cubeIndex]) <= 0)
-            {
-                g_cubesStates[cubeIndex].push_back(verticalStack[cubeIndex]);
-            }
-            rotateVerticalLeftRightmCube(&verticalStack[cubeIndex]);
+            std::cout << cubeState << std::endl;
         }
     }
 }
@@ -204,11 +307,12 @@ int main(int argc, char* args[])
     std::string intputValues[CUBECOUNT];
 
     extractInput(input, intputValues);
+    setInitialState(intputValues);
     
 
     generateEveryCombination(intputValues);
     checkEveryCombination(0,1,2,3);
-    int end = 3;
 
+    printSolution();
     return 0;
 }
